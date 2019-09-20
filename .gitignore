@@ -1,0 +1,7 @@
+dist
+node_modules
+*.lock
+.DS_store
+del
+*.log
+.vscode
