@@ -9,6 +9,7 @@ declare global {
     childFlags: ChildrenFlags;  // 挂载子组件类型
     data?: any; // 组件属性
     el?: any; // 挂载到文档中的元素引用
+    key?: any;
     handle?: {
       prev: VNode;
       next: VNode;

@@ -3,7 +3,7 @@ import { VNodeFlags, ChildrenFlags } from './enum';
 import { patch } from './patch';
 
 
-const mountElement = (vnode: VNode, container: HTMLElement, isSVG?: boolean): void => {
+const mountElement = (vnode: VNode, container: HTMLElement, isSVG?: boolean, refNode?: HTMLElement): void => {
   const isSvg: boolean = vnode.flags & VNodeFlags.ELEMENT_SVG ? true : false;
   const el: any = isSvg ? document.createElementNS('http://www.w3.org/2000/svg', vnode.tag)
     : document.createElement(vnode.tag)
@@ -24,7 +24,7 @@ const mountElement = (vnode: VNode, container: HTMLElement, isSVG?: boolean): vo
       });
     }
   }
-  container.appendChild(el);
+  refNode ? container.insertBefore(el, refNode) : container.appendChild(el)
 }
 
 const mountFragment = (vnode: VNode, container: HTMLElement, isSVG?: boolean): void => {
@@ -122,10 +122,10 @@ const mountFunctionalComponent = (vnode: VNode, container: HTMLElement, isSVG?: 
   vnode.handle.update()
 }
 
-export const mount = (vnode: VNode, container: any, isSVG?: boolean): void => {
+export const mount = (vnode: VNode, container: any, isSVG?: boolean, refNode?: HTMLElement): void => {
   const { flags } = vnode;
   if (flags & VNodeFlags.ELEMENT) {
-    mountElement(vnode, container, isSVG);
+    mountElement(vnode, container, isSVG, refNode);
   } else if (flags & VNodeFlags.COMPONENT) {
     mountComponent(vnode, container, isSVG);
   } else if (flags & VNodeFlags.TEXT) {

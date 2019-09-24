@@ -57,11 +57,47 @@ const patchChildren = (prevChildFlags: ChildrenFlags, nextChildFlags: ChildrenFl
           }
           break;
         default:
-          for (let i = 0; i < (<VNode[]>prevChildren).length; i++) {
-            container.removeChild(prevChildren[i].el)
-          }
-          for (let i = 0; i < (<VNode[]>nextChildren).length; i++) {
-            mount(nextChildren[i], container)
+          let lastIndex: number = 0;
+          let find: boolean = false;
+          // 遍历新的 children
+          for (let i: number = 0; i < (<VNode[]>nextChildren).length; i++) {
+            const nextVNode: VNode = nextChildren[i];
+            let j: number = 0;
+            // 遍历旧的 children
+            for (j; j < (<VNode[]>prevChildren).length; j++) {
+              const prevVNode: VNode = prevChildren[j];
+              // 如果找到了具有相同 key 值的两个节点，则调用 `patch` 函数更新之
+              if (nextVNode.key === prevVNode.key) {
+                find = true;
+                patch(prevVNode, nextVNode, container);
+                if (j >= lastIndex) {
+                  lastIndex = j
+                } else {
+                  // 需要移动
+                  // refNode 是为了下面调用 insertBefore 函数准备的
+                  const refNode = nextChildren[i - 1].el.nextSibling;
+                  // 调用 insertBefore 函数移动 DOM
+                  container.insertBefore(prevVNode.el, refNode);
+                }
+                break;
+              }
+            }
+            if (!find) {
+              const refNode = i - 1 < 0 ? prevChildren[0].el : nextChildren[i - 1].el.nextSibling;
+              mount(nextVNode, container, false, refNode)
+            }
+            // 遍历旧的节点
+            for (let i = 0; i < (<VNode[]>prevChildren).length; i++) {
+              const prevVNode = prevChildren[i];
+              // 拿着旧 VNode 去新 children 中寻找相同的节点
+              const has = (<VNode[]>nextChildren).filter(
+                nextVNode => nextVNode.key === prevVNode.key
+              )
+              if (!has) {
+                // 如果没有找到相同的节点，则移除
+                container.removeChild(prevVNode.el);
+              }
+            }
           }
           break;
       }

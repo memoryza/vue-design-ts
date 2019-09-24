@@ -65,6 +65,7 @@ export const h = (tag: any, data: any = null, children: any = null): VNode => {
     data.class = className.join(' ');
   }
   return {
+    key: data && data.key ? data.key : null,
     _isNode: true,
     tag,
     data,

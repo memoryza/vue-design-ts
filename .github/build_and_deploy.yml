@@ -1,0 +1,22 @@
+name: design build
+on: push
+
+jobs:
+  name: build
+  runs-on: linux-lastest
+  steps:
+  - name: build assets
+    env:
+      ENV: pro
+    run: |
+      npm install && npm run build
+  
+  name: deploy
+  runs-on: linux-lastest
+  needs: [build]
+  steps:
+  - name: deploy assets
+    env:
+      CDN: www.test.com
+    run: |
+      

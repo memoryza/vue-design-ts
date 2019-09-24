@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "description": "",
   "main": "src/index.ts",
-  "es:next": "",
+  "es:next": "src/index.ts",
   "scripts": {
-    "dev": "node --inspect dist/index.js",
+    "dev": "",
     "test": "umi-test",
     "doc:build": "umi-library doc build",
     "build": "umi-library build",
