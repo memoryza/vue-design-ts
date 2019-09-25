@@ -1,6 +1,12 @@
 import { VNodeFlags, ChildrenFlags } from './enum';
 
 declare global {
+  interface HandleProps {
+    prev: VNode;
+    next: VNode;
+    container: HTMLElement;
+    update: () => void;
+  }
   interface VNode {
     _isNode: boolean;
     tag: any; // 挂载组件类型
@@ -10,12 +16,7 @@ declare global {
     data?: any; // 组件属性
     el?: any; // 挂载到文档中的元素引用
     key?: any;
-    handle?: {
-      prev: VNode;
-      next: VNode;
-      container: HTMLElement;
-      update: () => void;
-    };
+    handle?: HandleProps;
   }
   interface HTMLElement {
     el?: VNode;

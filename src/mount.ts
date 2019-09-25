@@ -34,20 +34,20 @@ const mountFragment = (vnode: VNode, container: HTMLElement, isSVG?: boolean): v
     vnode.el = children.el;
   } else if (childFlags & ChildrenFlags.KEYED_VNODES) {
     // 多个子节点，遍历挂载之
-    for (let i = 0; i < children.length; i++) {
+    for (let i: number = 0; i < children.length; i++) {
       mount(children[i], container, isSVG);
     }
     vnode.el = children[0].el;
   } else {
     // 如果没有子节点，等价于挂载空片段，会创建一个空的文本节点占位
-    const placeholder = createTextVNode('');
+    const placeholder: VNode = createTextVNode('');
     mountText(placeholder, container);
     vnode.el = placeholder.el;
   }
 }
 
 const mountText = (vnode: VNode, container: HTMLElement): Text => {
-  const el = document.createTextNode(vnode.children);
+  const el: Text = document.createTextNode(vnode.children);
   vnode.el = el;
   return container.appendChild(el);
 }
@@ -83,9 +83,9 @@ const mountStatefulComponent = (vnode: VNode, container: HTMLElement, isSVG?: bo
   instance._update = () => {
     if (instance._mounted) {
       // 1、拿到旧的 VNode
-      const prevVNode = instance.$vnode;
+      const prevVNode: VNode = instance.$vnode;
       // 2、重渲染新的 VNode
-      const nextVNode = (instance.$vnode = instance.render());
+      const nextVNode: VNode = (instance.$vnode = instance.render());
       // 3、patch 更新
       patch(prevVNode, nextVNode, prevVNode.el.parentNode);
       // 4、更新 vnode.el 和 $el

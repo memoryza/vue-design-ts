@@ -1,13 +1,13 @@
 import { VNodeFlags, ChildrenFlags } from './enum';
 
-export const Fragment = Symbol();
-export const Portal = Symbol();
-export const domPropsRE = /\[A-Z]|^(?:value|checked|selected|muted)$/;
+export const Fragment: Symbol = Symbol();
+export const Portal: Symbol = Symbol();
+export const domPropsRE: RegExp = /\[A-Z]|^(?:value|checked|selected|muted)$/;
 
-export const normalizeVNodes = (children) => {
-  let newChildren = [];
-  for (let i = 0; i < children.length; i++) {
-    let child = children[i];
+export const normalizeVNodes = (children: VNode[]): VNode[] => {
+  let newChildren: VNode[] = [];
+  for (let i: number = 0; i < children.length; i++) {
+    let child: VNode = children[i];
     if (child.key == null) {
       child.key = '|' + i;
     }

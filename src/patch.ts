@@ -5,7 +5,7 @@ import { patchData } from './util';
 const replaceVNode = (prevNode: VNode, vnode: VNode, container: HTMLElement): void => {
   container.removeChild(prevNode.el);
   if (prevNode.flags & VNodeFlags.COMPONENT_STATEFUL_NORMAL) {
-    const instance = prevNode.children;
+    const instance: any = prevNode.children;
     instance && instance.unmounted && instance.unmounted();
   }
   mount(vnode, container);
@@ -23,7 +23,7 @@ const patchChildren = (prevChildFlags: ChildrenFlags, nextChildFlags: ChildrenFl
           break;
         default:
           container.removeChild((<VNode>prevChildren).el);
-          for(let i = 0; i < (<VNode[]>nextChildren).length; i++) {
+          for(let i: number = 0; i < (<VNode[]>nextChildren).length; i++) {
             mount(nextChildren[i], container);
           }
           break;
@@ -37,7 +37,7 @@ const patchChildren = (prevChildFlags: ChildrenFlags, nextChildFlags: ChildrenFl
         case ChildrenFlags.NO_CHILDREN:
           break;
         default:
-          for (let i = 0; i < (<VNode[]>nextChildren).length; i++) {
+          for (let i: number = 0; i < (<VNode[]>nextChildren).length; i++) {
             mount(nextChildren[i], container);
           }
           break;
@@ -46,57 +46,71 @@ const patchChildren = (prevChildFlags: ChildrenFlags, nextChildFlags: ChildrenFl
     default:
       switch (nextChildFlags) {
         case ChildrenFlags.SINGLE_VNODE:
-          for (let i = 0; i < (<VNode[]>prevChildren).length; i++) {
+          for (let i: number = 0; i < (<VNode[]>prevChildren).length; i++) {
             container.removeChild(prevChildren[i]);
           }
           mount(<VNode>nextChildren, container);
           break;
         case ChildrenFlags.NO_CHILDREN:
-          for (let i = 0; i < (<VNode[]>prevChildren).length; i++) {
+          for (let i: number = 0; i < (<VNode[]>prevChildren).length; i++) {
             container.removeChild(prevChildren[i]);
           }
           break;
         default:
-          let lastIndex: number = 0;
-          let find: boolean = false;
-          // 遍历新的 children
-          for (let i: number = 0; i < (<VNode[]>nextChildren).length; i++) {
-            const nextVNode: VNode = nextChildren[i];
-            let j: number = 0;
-            // 遍历旧的 children
-            for (j; j < (<VNode[]>prevChildren).length; j++) {
-              const prevVNode: VNode = prevChildren[j];
-              // 如果找到了具有相同 key 值的两个节点，则调用 `patch` 函数更新之
-              if (nextVNode.key === prevVNode.key) {
-                find = true;
-                patch(prevVNode, nextVNode, container);
-                if (j >= lastIndex) {
-                  lastIndex = j
-                } else {
-                  // 需要移动
-                  // refNode 是为了下面调用 insertBefore 函数准备的
-                  const refNode = nextChildren[i - 1].el.nextSibling;
-                  // 调用 insertBefore 函数移动 DOM
-                  container.insertBefore(prevVNode.el, refNode);
-                }
-                break;
+          let oldStartIdx: number = 0;
+          let oldEndIdx: number = (<VNode[]>prevChildren).length - 1;
+          let newStartIdx: number = 0;
+          let newEndIdx: number = (<VNode[]>nextChildren).length - 1;
+          let oldStartVNode: VNode = prevChildren[oldStartIdx];
+          let oldEndVNode: VNode = prevChildren[oldEndIdx];
+          let newStartVNode: VNode = nextChildren[newStartIdx];
+          let newEndVNode: VNode = nextChildren[newEndIdx];
+          while(newStartIdx <= newEndIdx && oldStartIdx <= oldEndIdx) {
+            if (!oldStartVNode) {
+              oldStartVNode = prevChildren[++oldStartIdx];
+            } else if (!oldEndVNode) {
+              oldEndVNode = prevChildren[--oldEndIdx];
+            } else if (oldStartVNode.key === newStartVNode.key) {
+              patch(oldStartVNode, newStartVNode, container);
+              oldStartVNode = prevChildren[++oldStartIdx];
+              newStartVNode = nextChildren[++newStartIdx];
+            } else if (oldEndVNode.key === newEndVNode.key) {
+              patch(oldEndVNode, newEndVNode, container);
+              oldEndVNode = prevChildren[--oldEndIdx];
+              newEndVNode = newEndVNode[--newEndIdx];
+            } else if (oldStartVNode.key === newEndVNode.key) {
+              patch(oldStartVNode, newEndVNode, container);
+              // 将 oldStartVNode.el 移动到 oldEndVNode.el 的后面，也就是 oldEndVNode.el.nextSibling 的前面
+              container.insertBefore(oldStartVNode.el, oldEndVNode.el.nextSibling);
+              oldStartVNode = prevChildren[++oldStartIdx];
+              newEndVNode = nextChildren[--newEndIdx];
+            } else if (oldEndVNode.key === newStartVNode.key) {
+              patch(oldEndVNode, newStartVNode, container);
+              container.insertBefore(oldEndVNode.el, oldStartVNode.el);
+              oldEndVNode = prevChildren[--oldEndIdx];
+              newStartVNode = nextChildren[++newStartIdx];
+            } else {
+              const idxInOld: number = (<VNode[]>prevChildren).findIndex(node => node.key === newStartVNode.key);
+              if (idxInOld >= 0) {
+                const vnodeToMove: VNode = prevChildren[idxInOld];
+                patch(vnodeToMove, newStartVNode, container);
+                container.insertBefore(vnodeToMove.el, oldStartVNode.el)
+                prevChildren[idxInOld] = undefined;
+              } else {
+                mount(newStartVNode, container, false, oldStartVNode.el);
               }
+              newStartVNode = nextChildren[++newStartIdx];
             }
-            if (!find) {
-              const refNode = i - 1 < 0 ? prevChildren[0].el : nextChildren[i - 1].el.nextSibling;
-              mount(nextVNode, container, false, refNode)
+          }
+          // 旧的集合里没有，但是双端比较已经结束，需要将新的挂载
+          if (oldEndIdx < oldStartIdx) {
+            for (let i:number = newStartIdx; i <= newEndIdx; i++) {
+              mount(nextChildren[i], container, false, oldStartVNode.el);
             }
-            // 遍历旧的节点
-            for (let i = 0; i < (<VNode[]>prevChildren).length; i++) {
-              const prevVNode = prevChildren[i];
-              // 拿着旧 VNode 去新 children 中寻找相同的节点
-              const has = (<VNode[]>nextChildren).filter(
-                nextVNode => nextVNode.key === prevVNode.key
-              )
-              if (!has) {
-                // 如果没有找到相同的节点，则移除
-                container.removeChild(prevVNode.el);
-              }
+          } else if (newEndIdx < newStartIdx ){
+            // 新的集合里没有，但是双端比较已经结束，需要将旧的删除
+            for (let i = oldStartIdx; i <= oldEndIdx; i++) {
+              container.removeChild(prevChildren[i].el);
             }
           }
           break;
@@ -108,11 +122,11 @@ const patchElement = (prevNode: VNode, vnode: VNode, container: HTMLElement): vo
   if (prevNode.tag !== vnode.tag) {
     return replaceVNode(prevNode, vnode, container);
   }
-  const el = (vnode.el = prevNode.el);
-  const keys = new Set(Object.keys(prevNode.data || {}).concat(Object.keys(vnode.data || {})));
+  const el: HTMLElement = (vnode.el = prevNode.el);
+  const keys: Set<string> = new Set(Object.keys(prevNode.data || {}).concat(Object.keys(vnode.data || {})));
   for (let key of keys) {
-    const prevVal = prevNode.data && prevNode.data[key];
-    const nextVal = vnode.data && vnode.data[key];
+    const prevVal: any = prevNode.data && prevNode.data[key];
+    const nextVal: any = vnode.data && vnode.data[key];
     patchData(el, key, prevVal, nextVal);
   }
   patchChildren(prevNode.childFlags,
@@ -126,11 +140,11 @@ const patchCompoent = (prevNode: VNode, vnode: VNode, container: HTMLElement): v
   if (prevNode.tag !== vnode.tag) {
     replaceVNode(prevNode, vnode, container);
   } else if (vnode.flags & VNodeFlags.COMPONENT_STATEFUL_NORMAL) {
-    const instance = (vnode.children = prevNode.children);
+    const instance: any = (vnode.children = prevNode.children);
     instance.$props = vnode.data;
     instance._update();
   } else {
-    const handle = (vnode.handle = prevNode.handle);
+    const handle: HandleProps = (vnode.handle = prevNode.handle);
     handle.prev = prevNode;
     handle.next = vnode;
     handle.container = container;
@@ -152,7 +166,7 @@ const patchFragment = (prevNode: VNode, vnode: VNode, container: HTMLElement): v
 }
 const patchPortal = (prevNode: VNode, vnode: VNode): void => {
   if (prevNode.tag != vnode.tag) {
-    const container = typeof prevNode.tag === 'string'
+    const container: HTMLElement = typeof prevNode.tag === 'string'
         ? document.querySelector(prevNode.tag)
         : prevNode.tag;
     switch (prevNode.childFlags) {
@@ -160,7 +174,7 @@ const patchPortal = (prevNode: VNode, vnode: VNode): void => {
         container.removeChild(prevNode.children.el)
         break
       case ChildrenFlags.KEYED_VNODES:
-        for (let i = 0; i < prevNode.children.length; i++) {
+        for (let i: number = 0; i < prevNode.children.length; i++) {
           container.removeChild(prevNode.children[i].el)
         }
         break
@@ -174,7 +188,7 @@ const patchPortal = (prevNode: VNode, vnode: VNode): void => {
   }
 }
 const patchText = (prevNode: VNode, vnode: VNode, container: HTMLElement): void => {
-  const el = (vnode.el = prevNode.el)
+  const el: HTMLElement = (vnode.el = prevNode.el)
   if (vnode.children !== prevNode.children) {
     el.nodeValue = vnode.children
   }
