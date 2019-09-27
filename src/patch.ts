@@ -190,7 +190,7 @@ const patchPortal = (prevNode: VNode, vnode: VNode): void => {
 const patchText = (prevNode: VNode, vnode: VNode, container: HTMLElement): void => {
   const el: HTMLElement = (vnode.el = prevNode.el)
   if (vnode.children !== prevNode.children) {
-    el.nodeValue = vnode.children
+    el.innerText = vnode.children
   }
 }
 export const patch = (prevNode: VNode, vnode: VNode, container: HTMLElement): void => {
